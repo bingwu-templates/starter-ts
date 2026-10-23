@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "description": "基于 Turborepo、Oxc 和 pnpm 的 TypeScript 库模板",
-  "homepage": "https://github.com/BINGWU2003/starter-ts#readme",
-  "bugs": "https://github.com/BINGWU2003/starter-ts/issues",
+  "homepage": "https://github.com/bingwu-templates/starter-ts#readme",
+  "bugs": "https://github.com/bingwu-templates/starter-ts/issues",
   "license": "MIT",
   "author": "BINGWU2003",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BINGWU2003/starter-ts.git"
+    "url": "git+https://github.com/bingwu-templates/starter-ts.git"
   },
   "type": "module",
   "scripts": {

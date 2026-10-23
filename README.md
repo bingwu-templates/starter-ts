@@ -26,13 +26,13 @@ Oxlint 负责代码检查和规则修复，Oxfmt 统一格式化仓库，Knip �
 3. 将 `YOUR_NAME` 替换为你的作者名。
 4. 将 `OWNER/REPOSITORY` 替换为你的 GitHub 仓库路径。
 5. 更新根目录 `package.json` 和 `.changeset/config.json` 中的
-   `BINGWU2003/starter-ts`。
+   `bingwu-templates/starter-ts`。
 6. 修改 `packages/core` 的描述、源码和测试。
 
 可以使用 `rg` 检查是否还有未替换的标记：
 
 ```bash
-rg '@scope|YOUR_NAME|OWNER/REPOSITORY|BINGWU2003/starter-ts'
+rg '@scope|YOUR_NAME|OWNER/REPOSITORY|bingwu-templates/starter-ts'
 ```
 
 ## 目录结构
