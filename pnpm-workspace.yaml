@@ -14,7 +14,7 @@ catalog:
   '@changesets/cli': ^3.0.3
   '@types/node': ^26.6.5
   knip: ^6.41.0
-  nano-staged: ^1.0.2
+  lint-staged: ^16.4.0
   oxfmt: 0.74.0
   oxlint: 1.79.0
   oxlint-tsgolint: ^7.0.2004

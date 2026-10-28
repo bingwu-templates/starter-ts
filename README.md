@@ -85,8 +85,8 @@ pnpm check
 Knip 从 `pnpm-workspace.yaml` 自动识别 workspace，通过内置插件读取构建、测试和工具配置。
 `pnpm check` 和 CI 的静态检查任务都会运行 Knip，发现未使用的文件、导出或依赖时检查失败。
 
-提交时，nano-staged 会使用根 `oxlint.config.ts` 修复暂存的 JavaScript/TypeScript 文件，再用
-根 `oxfmt.config.ts` 格式化所有匹配文件。
+提交时，lint-staged 根据根 `lint-staged.config.ts` 匹配暂存文件，使用根 `oxlint.config.ts`
+修复 JavaScript/TypeScript 文件，再用根 `oxfmt.config.ts` 格式化所有匹配文件。
 
 运行消费示例：
 
