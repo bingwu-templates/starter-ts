@@ -15,7 +15,7 @@ catalog:
   '@types/node': ^26.6.5
   knip: ^6.41.0
   lint-staged: ^16.4.0
-  oxfmt: 0.74.0
+  oxfmt: 0.75.0
   oxlint: 1.79.0
   oxlint-tsgolint: ^7.0.2004
   publint: ^0.3.25
