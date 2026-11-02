@@ -1,16 +1,18 @@
 # starter-ts
 
 一个有明确工程取向的 TypeScript 库模板：使用 pnpm 管理 workspace，Turborepo 编排任务，
-Oxlint 负责代码检查和规则修复，Oxfmt 统一格式化仓库，tsdown 构建 ESM 包，Vitest 测试真实
-行为，Changesets 管理发布。
+Oxlint 负责代码检查和规则修复，Oxfmt 统一格式化仓库，Knip 检查未使用的代码和依赖，tsdown
+构建 ESM 包，Vitest 测试真实行为，Changesets 管理发布。
 
 ## 特性
 
 - Node.js ESM only，支持 Node.js 22.18+ 与 24.x
 - `packages/core`：可发布的 TypeScript 库
 - `examples/basic`：直接消费 workspace 包的最小示例
+- Zod 4 运行时校验，公开 schema 与 `parse` / `safeParse` 用法示例
 - 根目录统一维护 Oxlint、Oxfmt 与 TypeScript 公共配置
 - 根级 Oxlint 类型感知检查与 Oxfmt 统一格式化，子包无需重复配置
+- 根级 Knip 检查所有 workspace 的未使用文件、导出和依赖，接入本地验证及 CI
 - Turborepo 本地及 CI 缓存
 - Changesets、npm Trusted Publishing 和 GitHub Release
 - Ubuntu、Windows 与 Node.js 22、24 的 CI 验证
@@ -24,13 +26,13 @@ Oxlint 负责代码检查和规则修复，Oxfmt 统一格式化仓库，tsdown 
 3. 将 `YOUR_NAME` 替换为你的作者名。
 4. 将 `OWNER/REPOSITORY` 替换为你的 GitHub 仓库路径。
 5. 更新根目录 `package.json` 和 `.changeset/config.json` 中的
-   `BINGWU2003/starter-ts`。
+   `bingwu-templates/starter-ts`。
 6. 修改 `packages/core` 的描述、源码和测试。
 
 可以使用 `rg` 检查是否还有未替换的标记：
 
 ```bash
-rg '@scope|YOUR_NAME|OWNER/REPOSITORY|BINGWU2003/starter-ts'
+rg '@scope|YOUR_NAME|OWNER/REPOSITORY|bingwu-templates/starter-ts'
 ```
 
 ## 目录结构
@@ -42,8 +44,8 @@ rg '@scope|YOUR_NAME|OWNER/REPOSITORY|BINGWU2003/starter-ts'
 ├─ examples/
 │  └─ basic/           # 消费示例，只保留 TypeScript 项目配置
 ├─ .npmrc              # npm/Node.js 引擎严格校验
-├─ .oxlintrc.json      # 整个仓库共享的 Oxlint 配置
-├─ .oxfmtrc.json       # 整个仓库共享的 Oxfmt 配置
+├─ oxlint.config.ts    # 整个仓库共享的 Oxlint 配置
+├─ oxfmt.config.ts     # 整个仓库共享的 Oxfmt 配置
 ├─ tsconfig.base.json  # TypeScript 公共编译选项
 ├─ tsconfig.node.json  # Node.js workspace 的 TypeScript 配置
 └─ turbo.json          # 只负责任务编排与缓存
@@ -75,12 +77,16 @@ pnpm check
 | `pnpm lint:fix`     | 使用根配置修复整个仓库的 lint 问题    |
 | `pnpm format`       | 使用根 Oxfmt 配置格式化整个仓库       |
 | `pnpm format:check` | 检查整个仓库的格式                    |
+| `pnpm knip`         | 检查未使用的文件、导出和依赖          |
 | `pnpm typecheck`    | 检查所有 workspace 的 TypeScript 类型 |
 | `pnpm test`         | 运行 Vitest 测试                      |
 | `pnpm check`        | 运行提交前的完整验证                  |
 
-提交时，nano-staged 会使用根 `.oxlintrc.json` 修复暂存的 JavaScript/TypeScript 文件，再用
-根 `.oxfmtrc.json` 格式化所有匹配文件。
+Knip 从 `pnpm-workspace.yaml` 自动识别 workspace，通过内置插件读取构建、测试和工具配置。
+`pnpm check` 和 CI 的静态检查任务都会运行 Knip，发现未使用的文件、导出或依赖时检查失败。
+
+提交时，lint-staged 根据根 `lint-staged.config.ts` 匹配暂存文件，使用根 `oxlint.config.ts`
+修复 JavaScript/TypeScript 文件，再用根 `oxfmt.config.ts` 格式化所有匹配文件。
 
 运行消费示例：
 
@@ -89,7 +95,59 @@ pnpm build
 pnpm --filter @scope/example-basic start
 ```
 
+## 运行时校验
+
+模板在 `pnpm-workspace.yaml` 的 catalog 中统一管理 Zod 版本，`packages/core` 将 Zod 声明为
+运行时依赖。核心包公开 `greetNameSchema`，`greet(name: string)` 内部复用同一个 schema：
+输入必须是字符串，去掉首尾空白后不能为空；保留名称内部的空格，不限制长度或字符。
+
+```ts
+import { greet, greetNameSchema } from '@scope/core'
+
+greet('  TypeScript  ') // 'Hello, TypeScript!'
+
+// parse 返回校验后的值，失败时抛出原生 ZodError。
+const name = greetNameSchema.parse('  TypeScript  ') // 'TypeScript'
+greet(name)
+
+// safeParse 返回成功或失败结果，校验失败不会抛错。
+const result = greetNameSchema.safeParse('   ')
+if (result.success) {
+  console.log(greet(result.data))
+} else {
+  console.log(result.error.issues)
+}
+```
+
+空字符串、纯空白及运行时传入的非字符串都会校验失败。`greet` 使用 `parse`，遇到这些输入会
+抛出原生 `ZodError`；需要处理外部输入而不抛错时，可先调用公开 schema 的 `safeParse`。
+从模板创建项目后，可以按业务需要修改 schema 的规则。
+
 ## 发布
+
+模板默认不启用自动发布：未设置仓库变量 `ENABLE_RELEASE=true` 时，Release workflow 的
+发布任务会跳过，不会创建版本 PR、发布 npm 包或创建 GitHub Release。CI 验证仍正常运行。
+
+### 启用自动发布
+
+从模板创建项目并替换包名、仓库信息后，按以下步骤配置：
+
+1. 首次发布需要先在本地登录 npm 并创建包，将以下命令中的包名替换为你的实际包名：
+
+   ```bash
+   pnpm --filter @your-scope/your-package publish --access public
+   ```
+
+2. 在 npm 包的 **Trusted Publisher** 设置中绑定 GitHub 仓库和工作流文件 `release.yml`。
+   工作流使用 OIDC 发布，不需要长期保存 `NPM_TOKEN`。
+3. 在 GitHub 仓库的 **Settings → Actions → General → Workflow permissions** 中启用
+   **Allow GitHub Actions to create and approve pull requests**，以便 Changesets 创建版本 PR。
+4. 在 **Settings → Secrets and variables → Actions → Variables** 中添加仓库变量
+   `ENABLE_RELEASE`，值设为 `true`。
+
+变量启用后，下次推送到 `main` 就会执行发布流程。删除变量或将值设为 `false` 可再次停用。
+
+### 日常发布
 
 面向用户的变更应先创建 changeset：
 
@@ -99,15 +157,6 @@ pnpm changeset
 
 合并到 `main` 后，Release workflow 会创建或更新版本 PR。合并版本 PR 后，workflow 会构建、
 发布 npm 包，并由 Changesets 创建 GitHub Release。
-
-首次发布需要先在本地登录 npm 并创建包：
-
-```bash
-pnpm --filter @scope/core publish --access public
-```
-
-随后在 npm 包的 **Trusted Publisher** 设置中绑定 GitHub 仓库和
-`.github/workflows/release.yml`。工作流使用 OIDC 发布，不需要长期保存 `NPM_TOKEN`。
 
 ## Turbo 远程缓存
 
